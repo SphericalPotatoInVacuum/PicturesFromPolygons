@@ -37,9 +37,9 @@ void Application::Run() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    /* Setup controls */
+    // Setup controls
     {
-      /* Window definition */
+      // Window definition
       ImGui::Begin("Control your setup", NULL, ImGuiWindowFlags_AlwaysAutoResize);
       ImGui::PushItemWidth(128.0f);
 
@@ -74,7 +74,7 @@ void Application::Run() {
 
       ImGui::End();
 
-      /* File dialog work */
+      // File dialog work
       file_dialog.Display();
 
       if (file_dialog.HasSelected()) {
@@ -82,12 +82,12 @@ void Application::Run() {
         input_path = file_dialog.GetSelected();
         GLubyte *image_data;
         if (LoadTextureFromFile(input_path, &image_texture_, &image_width_, &image_height_, &image_data)) {
-          /* If loading was a success then load this file */
+          // If loading was a success then load this file
           image_pixels_ = std::unique_ptr<GLubyte[]>(image_data);
           SetupNewTexture();
           name_str = input_path.filename().string();
         } else {
-          /* Otherwise do nothing and tell the user to select another file */
+          // Otherwise do nothing and tell the user to select another file
           ImGui::OpenPopup("Wrong filetype");
         }
         file_dialog.ClearSelected();
@@ -101,7 +101,7 @@ void Application::Run() {
     }
 
     if (name_str != "") {
-      /* If we have an active target file then draw it */
+      // If we have an active target file then draw it
       ImGui::Begin("Target image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
       ImGui::Image((void *)(intptr_t)image_texture_, ImVec2(image_width_, image_height_));
       ImGui::Text("Size = %d x %d", image_width_, image_height_);
@@ -109,7 +109,7 @@ void Application::Run() {
     }
 
     if (annealing_) {
-      /* Annealing happens here */
+      // Annealing happens here
       Mutate();
 
       DrawTriangles(cur_triangles_, cur_buffer_name_, cur_pixels_);
@@ -126,10 +126,6 @@ void Application::Run() {
         best_mse_ = cur_mse_;
         DrawTriangles(best_triangles_, best_buffer_name_, best_pixels_);
       }
-
-      // ImGui::Begin("Evaluating image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-      // ImGui::Image((void *)(intptr_t)cur_texture_, ImVec2(image_width_, image_height_));
-      // ImGui::End();
 
       ImGui::Begin("Current image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
       ImGui::Image((void *)(intptr_t)best_texture_, ImVec2(image_width_, image_height_));
@@ -210,7 +206,7 @@ void Application::GlfwTeardown() {
   glfwTerminate();
 }
 
-/* Create new OpenGL textures for generated images */
+// Create new OpenGL textures for generated images
 void Application::SetupNewTexture() {
   GLuint buffer_names[2] = {0};
   GLuint textures[2] = {0};
