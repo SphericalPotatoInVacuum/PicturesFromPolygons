@@ -5,7 +5,6 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
-#include <glog/logging.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -16,8 +15,7 @@
 #include <cstdlib>
 #include <filesystem>
 
-Application::Application(char *argv0) {
-  InitLogger(argv0);
+Application::Application() {
   InitGlfw();
   InitGlad();
   InitImgui();
@@ -83,12 +81,11 @@ void Application::Run() {
         annealing_ = false;
         input_path = file_dialog.GetSelected();
         GLubyte *image_data;
-        if (LoadTextureFromFile(input_path.c_str(), &image_texture_, &image_width_, &image_height_, &image_data)) {
+        if (LoadTextureFromFile(input_path, &image_texture_, &image_width_, &image_height_, &image_data)) {
           /* If loading was a success then load this file */
           image_pixels_ = std::unique_ptr<GLubyte[]>(image_data);
           SetupNewTexture();
           name_str = input_path.filename().string();
-          LOG(INFO) << "Selected file " << name_str;
         } else {
           /* Otherwise do nothing and tell the user to select another file */
           ImGui::OpenPopup("Wrong filetype");
@@ -130,12 +127,9 @@ void Application::Run() {
         DrawTriangles(best_triangles_, best_buffer_name_, best_pixels_);
       }
 
-      temps_.push_back(temp);
-      mses_.push_back(best_mse_);
-
-      ImGui::Begin("Evaluating image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-      ImGui::Image((void *)(intptr_t)cur_texture_, ImVec2(image_width_, image_height_));
-      ImGui::End();
+      // ImGui::Begin("Evaluating image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+      // ImGui::Image((void *)(intptr_t)cur_texture_, ImVec2(image_width_, image_height_));
+      // ImGui::End();
 
       ImGui::Begin("Current image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
       ImGui::Image((void *)(intptr_t)best_texture_, ImVec2(image_width_, image_height_));
@@ -145,12 +139,8 @@ void Application::Run() {
       ImGui::Text("Current iteration: %lu", iteration_);
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
                   ImGui::GetIO().Framerate);
-      ImGui::PlotLines("Temp", temps_.data(), temps_.size());
-      ImGui::SameLine();
-      ImGui::Text("%.5f", temp);
-      ImGui::PlotLines("MSE", mses_.data(), mses_.size());
-      ImGui::SameLine();
-      ImGui::Text("%.2f", best_mse_);
+      ImGui::Text("Temp: %.5f", temp);
+      ImGui::Text("MSE: %.2f", best_mse_);
 
       ImGui::End();
 
@@ -171,39 +161,26 @@ void Application::Run() {
   GlfwTeardown();
 }
 
-void Application::InitLogger(char *argv0) {
-  FLAGS_logtostderr = 1;
-  FLAGS_log_dir = "logs/";
-  google::InitGoogleLogging(argv0);
-  LOG(INFO) << "Initialized glog";
-}
-
 void Application::InitGlfw() {
   if (!glfwInit()) {
-    LOG(ERROR) << "Could not initialize glfw";
     exit(2);
   }
-  LOG(INFO) << "Initialized glfw";
 
   glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
   window_ = glfwCreateWindow(kWidth, kHeight, "PFP", NULL, NULL);
   if (window_ == NULL) {
-    LOG(ERROR) << "Could not create GLFW window";
     GlfwTeardown();
     exit(3);
   }
   glfwMakeContextCurrent(window_);
   glfwSwapInterval(0);
-  LOG(INFO) << "Created GLFW window";
 }
 
 void Application::InitGlad() {
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-    LOG(ERROR) << "Could not initialize glad";
     GlfwTeardown();
     exit(4);
   }
-  LOG(INFO) << "Initialized glad";
 }
 
 void Application::InitImgui() {
@@ -224,7 +201,6 @@ void Application::SetupOpenGL() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, actual_width_, actual_height_);
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  LOG(INFO) << "Initialized OpenGL";
 }
 
 void Application::GlfwTeardown() {
@@ -232,8 +208,6 @@ void Application::GlfwTeardown() {
     glfwDestroyWindow(window_);
   }
   glfwTerminate();
-
-  LOG(INFO) << "Teardown finished";
 }
 
 /* Create new OpenGL textures for generated images */
@@ -334,9 +308,6 @@ void Application::StartAnnealing() {
   best_mse_ = cur_mse_;
   annealing_ = true;
   iteration_ = 1;
-  mses_.clear();
-  temps_.clear();
-  LOG(INFO) << "Started simulation, initial MSE: " << cur_mse_;
 }
 
 ScheduleFunc Application::GetScheduleFunc(CoolingSchedule schedule) {

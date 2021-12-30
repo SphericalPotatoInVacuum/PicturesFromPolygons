@@ -24,12 +24,11 @@ typedef std::function<float(int)> ScheduleFunc;
 
 class Application {
  public:
-  Application(char *argv0);
+  Application();
   void Run();
 
  private:
   enum MutationType { COLOR, ORDER, POSITION, LAST };
-  void InitLogger(char *argv0);
   void InitGlfw();
   void InitGlad();
   void InitImgui();
@@ -53,9 +52,6 @@ class Application {
 
   size_t triangle_count_;
   ScheduleFunc Schedule_;
-
-  std::vector<float> temps_;
-  std::vector<float> mses_;
 
   std::vector<Triangle> best_triangles_;
   std::unique_ptr<GLubyte[]> best_pixels_;

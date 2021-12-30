@@ -4,6 +4,10 @@
 #include <glad/glad.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <memory>
 
 float rand_float(float from, float to) {
   float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
@@ -27,11 +31,26 @@ const char *schedule_names[9] = {"Geman & Geman, c = 1",
                                  "Linear with reheat",
                                  "Cosine"};
 
-bool LoadTextureFromFile(const char *filename, GLuint *out_texture, int *out_width, int *out_height,
+bool LoadTextureFromFile(std::filesystem::path path, GLuint *out_texture, int *out_width, int *out_height,
                          GLubyte **out_data) {
+  std::ifstream ifs(path.string().c_str(), std::ifstream::binary);
+  std::filebuf *pbuf = ifs.rdbuf();
+
+  // get file size using buffer's members
+  std::size_t size = pbuf->pubseekoff(0, ifs.end, ifs.in);
+  pbuf->pubseekpos(0, ifs.in);
+
+  // allocate memory to contain file data
+  std::unique_ptr<unsigned char[]> buffer = std::make_unique<unsigned char[]>(size);
+
+  // get file data
+  pbuf->sgetn((char *)buffer.get(), size);
+
+  ifs.close();
+
   int image_width = 0;
   int image_height = 0;
-  unsigned char *image_data = stbi_load(filename, &image_width, &image_height, NULL, 4);
+  unsigned char *image_data = stbi_load_from_memory(buffer.get(), size, &image_width, &image_height, NULL, 4);
   if (image_data == NULL) {
     return false;
   }
