@@ -7,3 +7,9 @@
 [submodule "libs/imgui-filebrowser"]
 	path = libs/imgui-filebrowser
 	url = git@github.com:AirGuanZ/imgui-filebrowser.git
+[submodule "libs/plog"]
+	path = libs/plog
+	url = git@github.com:SergiusTheBest/plog.git
+[submodule "libs/glm"]
+	path = libs/glm
+	url = git@github.com:g-truc/glm.git

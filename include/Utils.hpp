@@ -2,17 +2,33 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
+
 #include <cstdio>
 #include <filesystem>
 
-/* Generate a random float */
+/**
+ * @brief Generate a random float
+ *
+ * @param from lower bound
+ * @param to upper bound
+ * @return float
+ */
 float rand_float(float from = 0, float to = 1);
 
+/**
+ * @brief Clamp a given value between boundariess
+ *
+ * @param value
+ * @param from
+ * @param to
+ * @return float
+ */
 float clamp(float value, float from, float to);
 
-enum CoolingSchedule { C_1, C_50, C_195075, LINEAR, STAIRCASE, SIGMOID, GEOMETRIC, LINEAR_REHEAT, COSINE };
+struct Image {
+  GLuint texture = -1;
+  int width = 0;
+  int height = 0;
+};
 
-extern const char *schedule_names[9];
-
-bool LoadTextureFromFile(std::filesystem::path path, GLuint *out_texture, int *out_width, int *out_height,
-                         GLubyte **out_data);
+bool LoadTextureFromFile(std::filesystem::path path, Image &texture);

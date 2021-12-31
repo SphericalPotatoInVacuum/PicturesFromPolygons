@@ -1,9 +1,11 @@
-#include <stdlib.h>
+#include <glad/glad.h>
+#include <plog/Log.h>
 
 #include <Utils.hpp>
-#include <glad/glad.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <stb_image_resize.h>
+
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -31,8 +33,9 @@ const char *schedule_names[9] = {"Geman & Geman, c = 1",
                                  "Linear with reheat",
                                  "Cosine"};
 
-bool LoadTextureFromFile(std::filesystem::path path, GLuint *out_texture, int *out_width, int *out_height,
-                         GLubyte **out_data) {
+bool LoadTextureFromFile(std::filesystem::path path, Image &image) {
+  PLOGI << "Loading texture from file \"" << path.string() << "\"";
+
   std::ifstream ifs(path.string().c_str(), std::ifstream::binary);
   std::filebuf *pbuf = ifs.rdbuf();
 
@@ -52,6 +55,7 @@ bool LoadTextureFromFile(std::filesystem::path path, GLuint *out_texture, int *o
   int image_height = 0;
   unsigned char *image_data = stbi_load_from_memory(buffer.get(), size, &image_width, &image_height, NULL, 4);
   if (image_data == NULL) {
+    PLOGI << "File does not appear to be an image, aborting";
     return false;
   }
 
@@ -67,9 +71,7 @@ bool LoadTextureFromFile(std::filesystem::path path, GLuint *out_texture, int *o
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
 
-  *out_texture = image_texture;
-  *out_width = image_width;
-  *out_height = image_height;
-  *out_data = image_data;
+  image = {image_texture, image_width, image_height};
+  PLOGI << "Loaded texture #" << image_texture << ", " << image_width << "x" << image_height;
   return true;
 }
