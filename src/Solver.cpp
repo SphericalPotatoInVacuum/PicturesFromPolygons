@@ -17,33 +17,37 @@ Solver::Solver(Image image, size_t population_size, size_t chromosome_size, floa
       img_pixels_(std::make_unique<GLubyte[]>(buffer_size_)) {
   switch (crossover_type) {
     case ONE_POINT: {
-      Crossover_ = OnePointCrossoverStrategy();
+      Crossover_ = new OnePointCrossoverStrategy();
       break;
     }
     case TWO_POINT: {
-      Crossover_ = TwoPointCrossoverStrategy();
+      Crossover_ = new TwoPointCrossoverStrategy();
       break;
     }
     case UNIFORM: {
-      Crossover_ = UniformCrossoverStrategy();
+      Crossover_ = new UniformCrossoverStrategy();
+      break;
+    }
+    case NONE: {
+      Crossover_ = new NoneCrossoverStrategy();
       break;
     }
   }
   switch (selection_type) {
     case FITNESS_PROPORTIONATE_SELECTION: {
-      Selection_ = FitnessPropotionateSelection(cleansing_rate);
+      Selection_ = new FitnessPropotionateSelection(cleansing_rate);
       break;
     }
     case STOCHASTIC_UNIVERSAL_SAMPLING: {
-      Selection_ = StochasticUniversalSampling(cleansing_rate);
+      Selection_ = new StochasticUniversalSampling(cleansing_rate);
       break;
     }
     case TOURNAMENT_SELECTION: {
-      Selection_ = TournamentSelection(cleansing_rate);
+      Selection_ = new TournamentSelection(cleansing_rate);
       break;
     }
     case TRUNCATION_SELECTION: {
-      Selection_ = TruncationSelection(cleansing_rate);
+      Selection_ = new TruncationSelection(cleansing_rate);
       break;
     }
   }
@@ -62,32 +66,38 @@ Solver::Solver(Image image, size_t population_size, size_t chromosome_size, floa
 IterationResult Solver::Iteration() {
   IterationResult result = {0};
   result.iteration = ++iteration_;
-  result.mse_best = INFINITY;
-  result.mse_worst = 0;
+  result.best_fitness = 0;
+  result.worst_fitness = INFINITY;
 
   // generate new populaiton
-  std::vector<Chromosome> parents = Selection_(population_);
+  std::vector<Chromosome> parents = (*Selection_)(population_);
   for (size_t i = 0; i < population_size_; ++i) {
     int idx1 = rand() % parents.size();
     int idx2 = rand() % (parents.size() - 1);
     if (idx2 >= idx1) {
       ++idx2;
     }
-    population_[i] = Crossover_(parents[idx1].GetTriangles(), parents[idx2].GetTriangles());
+    population_[i] = (*Crossover_)(parents[idx1].GetTriangles(), parents[idx2].GetTriangles());
     population_[i].Mutate();
     population_[i].Draw(buffers_[i], image_.width, image_.height);
   }
   CalcFitness_();
   for (size_t i = 0; i < population_size_; ++i) {
-    float mse = population_[i].GetFitness();
-    if (mse < result.mse_best) {
-      result.mse_best = mse;
+    float fitness = population_[i].GetFitness();
+    if (fitness > result.best_fitness) {
+      result.best_fitness = fitness;
       result.texture = textures_[i];
     }
-    result.mse_worst = std::max(result.mse_worst, mse);
-    result.mse_mean += mse;
+    if (fitness > best_fitness_) {
+      glBlitNamedFramebuffer(buffers_[i], buffers_[population_size_], 0, 0, image_.width, image_.height, 0, 0,
+                             image_.width, image_.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+      best_fitness_ = fitness;
+    }
+    result.best_fitness = std::max(result.best_fitness, fitness);
+    result.worst_fitness = std::min(result.worst_fitness, fitness);
+    result.mean_fitness += fitness;
   }
-  result.mse_mean /= population_size_;
+  result.mean_fitness /= population_size_;
 
   return result;
 }
@@ -97,8 +107,22 @@ void Solver::Cleanup() {
     PLOGI << "Deleting buffers for object " << this;
     glDeleteBuffers(population_size_, buffers_.data());
     glDeleteTextures(population_size_, textures_.data());
+    delete Selection_;
+    delete Crossover_;
   } else {
     PLOGI << "Nothing to clean up";
+  }
+}
+
+const std::vector<GLuint> &Solver::GetTextures() const {
+  return textures_;
+}
+
+GLuint Solver::GetBestTexture() const {
+  if (initialized_) {
+    return textures_[population_size_];
+  } else {
+    return -1;
   }
 }
 
@@ -111,26 +135,25 @@ void Solver::CalcFitness_() {
       diff = cur_pixels_[j] - img_pixels_[j];
       se += diff * diff;
     }
-    float mse = static_cast<double>(se) / static_cast<double>(buffer_size_);
-    population_[i].SetFitness(mse);
+    double mse = static_cast<double>(se) / static_cast<double>(buffer_size_);
+    population_[i].SetFitness(static_cast<double>(buffer_size_) / mse);
   }
 }
 
 void Solver::SetupBuffers_() {
   PLOGI << "Setting up buffers for object " << this;
-  glGenFramebuffers(population_size_, buffers_.data());
-  glGenTextures(population_size_, textures_.data());
+  glGenFramebuffers(population_size_ + 1, buffers_.data());
+  glGenTextures(population_size_ + 1, textures_.data());
 
-  for (size_t i = 0; i < population_size_; ++i) {
+  for (size_t i = 0; i <= population_size_; ++i) {
     glBindFramebuffer(GL_FRAMEBUFFER, buffers_[i]);
     glBindTexture(GL_TEXTURE_2D, textures_[i]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_.width, image_.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textures_[i], 0);
+    GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(1, DrawBuffers);
   }
   glBindBuffer(GL_FRAMEBUFFER, 0);
-
-  std::vector<GLenum> buffers(population_size_, GL_COLOR_ATTACHMENT0);
-  glDrawBuffers(population_size_, buffers.data());
 }

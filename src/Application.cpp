@@ -32,11 +32,12 @@ void Application::Run() {
   ImGui::FileBrowser file_dialog;
   std::filesystem::path input_path;
   std::string filename_str = "";
-  int population_size = 8;
-  int genome_size = 200;
-  float cleansing_rate = 0.75f;
-  int crossover_type = CrossoverType::UNIFORM;
-  int selection_type = SelectionType::FITNESS_PROPORTIONATE_SELECTION;
+  int population_size = 20;
+  int genome_size = 100;
+  float cleansing_rate = 0.7f;
+  int crossover_type = CrossoverType::NONE;
+  int selection_type = SelectionType::TRUNCATION_SELECTION;
+  GLuint best_texture = -1;
 
   bool flag = true;
 
@@ -76,6 +77,7 @@ void Application::Run() {
           solver_.Cleanup();
           solver_ = Solver(image_, population_size, genome_size, cleansing_rate, CrossoverType(crossover_type),
                            SelectionType(selection_type));
+          best_texture = solver_.GetBestTexture();
           Start();
         }
       }
@@ -122,20 +124,19 @@ void Application::Run() {
     }
 
     if (running_) {
-      PLOGI << "Before iteration";
       IterationResult res = solver_.Iteration();
-      PLOGI << "After iteration";
-      ImGui::Begin("Current best", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-      ImGui::Image((void *)(intptr_t)res.texture, ImVec2(image_.width, image_.height));
+
+      ImGui::Begin("Best of all time", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+      ImGui::Image((void *)(intptr_t)best_texture, ImVec2(image_.width, image_.height));
       ImGui::End();
 
       ImGui::Begin("Stats", NULL, ImGuiWindowFlags_AlwaysAutoResize);
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
                   ImGui::GetIO().Framerate);
       ImGui::Text("Current iteration: %lu", res.iteration);
-      ImGui::Text("Mean MSE: %.2f", res.mse_mean);
-      ImGui::Text("Best MSE: %.2f", res.mse_best);
-      ImGui::Text("Worst MSE: %.2f", res.mse_worst);
+      ImGui::Text("Mean MSE: %.2f", res.mean_fitness);
+      ImGui::Text("Best MSE: %.2f", res.best_fitness);
+      ImGui::Text("Worst MSE: %.2f", res.worst_fitness);
       ImGui::End();
     }
 

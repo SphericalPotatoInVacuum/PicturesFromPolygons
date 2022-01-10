@@ -9,9 +9,9 @@
 struct IterationResult {
   size_t iteration;
   GLuint texture;
-  float mse_best;
-  float mse_worst;
-  float mse_mean;
+  float best_fitness;
+  float worst_fitness;
+  float mean_fitness;
 };
 
 class Solver {
@@ -21,6 +21,9 @@ class Solver {
          SelectionType selection_type);
   IterationResult Iteration();
   void Cleanup();
+
+  const std::vector<GLuint> &GetTextures() const;
+  GLuint GetBestTexture() const;
 
  private:
   // parameters
@@ -33,8 +36,9 @@ class Solver {
   // stuff related to genetic algorithm
   void CalcFitness_();
   std::vector<Chromosome> population_;
-  CrossoverStrategy Crossover_;
-  SelectionStrategy Selection_;
+  CrossoverStrategy *Crossover_;
+  SelectionStrategy *Selection_;
+  float best_fitness_ = 0;
 
   // Selection functions
   std::vector<Chromosome> UniformSelection_(const std::vector<Chromosome> &chromosomes);

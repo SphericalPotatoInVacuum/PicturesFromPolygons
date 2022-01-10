@@ -12,6 +12,7 @@ struct Triangle {
 
 class Chromosome {
  public:
+  Chromosome() = default;
   Chromosome(const size_t size);
   Chromosome(std::vector<Triangle> triangles);
 

@@ -43,5 +43,10 @@ std::vector<Chromosome> TournamentSelection::operator()(const std::vector<Chromo
 }
 
 std::vector<Chromosome> TruncationSelection::operator()(const std::vector<Chromosome> &chromosomes) {
-  throw std::logic_error("Function not implemented");
+  std::vector<Chromosome> new_chromosomes(chromosomes.begin(), chromosomes.end());
+  std::sort(new_chromosomes.begin(), new_chromosomes.end(),
+            [](const Chromosome &a, const Chromosome &b) { return a.GetFitness() > b.GetFitness(); });
+  size_t keep = chromosomes.size() * (1 - cleansing_rate_);
+  new_chromosomes.resize(keep);
+  return std::move(new_chromosomes);
 }

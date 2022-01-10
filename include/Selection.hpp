@@ -16,7 +16,7 @@ class SelectionStrategy {
  public:
   SelectionStrategy() = default;
   SelectionStrategy(const float cleansing_rate);
-  virtual std::vector<Chromosome> operator()(const std::vector<Chromosome> &);
+  virtual std::vector<Chromosome> operator()(const std::vector<Chromosome> &) = 0;
 
  protected:
   float cleansing_rate_ = 1.0f;

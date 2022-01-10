@@ -20,7 +20,7 @@ void Chromosome::Mutate() {
       int idx = rand() % triangles_.size();
       Triangle &tr = triangles_[idx];
       idx = rand() % 4;
-      tr.color[idx] = clamp(tr.color[idx] + rand_float(-0.1f, +0.1f), 0.0f, 1.0f);
+      tr.color[idx] = rand_float();
       break;
     }
     case ORDER: {
@@ -37,8 +37,8 @@ void Chromosome::Mutate() {
       int idx = rand() % triangles_.size();
       Triangle &tr = triangles_[idx];
       idx = rand() % 3;
-      tr.vs[idx].x = clamp(tr.vs[idx].x + rand_float(-0.1f, +0.1f), -1.0f, 1.0f);
-      tr.vs[idx].y = clamp(tr.vs[idx].y + rand_float(-0.1f, +0.1f), -1.0f, 1.0f);
+      tr.vs[idx].x = rand_float(-1.0f, 1.0f);
+      tr.vs[idx].y = rand_float(-1.0f, 1.0f);
       break;
     }
   }

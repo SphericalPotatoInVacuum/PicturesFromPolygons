@@ -2,7 +2,7 @@
 #include <Chromosome.hpp>
 #include <cassert>
 
-const char *crossover_type_names[3] = {"One Point", "Two Point", "Uniform"};
+const char *crossover_type_names[4] = {"One Point", "Two Point", "Uniform", "None"};
 
 Chromosome OnePointCrossoverStrategy::operator()(const Chromosome &child1, const Chromosome &child2) {
   assert(child1.GetTriangles().size() == child2.GetTriangles().size());
@@ -52,5 +52,12 @@ Chromosome UniformCrossoverStrategy::operator()(const Chromosome &child1, const 
       triangles[i] = child2[i];
     }
   }
+  return Chromosome(std::move(triangles));
+}
+
+Chromosome NoneCrossoverStrategy::operator()(const Chromosome &child1, const Chromosome &child2) {
+  assert(child1.GetTriangles().size() == child2.GetTriangles().size());
+  size_t size = child1.GetTriangles().size();
+  std::vector<Triangle> triangles(rand() % 2 ? child1.GetTriangles() : child2.GetTriangles());
   return Chromosome(std::move(triangles));
 }
